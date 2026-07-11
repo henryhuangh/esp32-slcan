@@ -81,7 +81,7 @@ void set_twai_mode(char *command) {
   }
 }
 
-void send_frame_can_bus(void *pvParameter) {
+void send_frame_to_can_bus(void *pvParameter) {
   // send frame using can bus protocol to twai
   twai_frame_t twai_frame;
   int id_length;
@@ -122,7 +122,7 @@ void send_frame_can_bus(void *pvParameter) {
   }
 }
 
-void send_frame_to_slcan(void *pvParameter) {
+void send_frame_to_serial(void *pvParameter) {
   // send frame using slcan protocol to usb serial jtag
   twai_frame_t message;
   while (1) {
@@ -229,6 +229,8 @@ void app_main(void) {
 
   //   xTaskCreate(collectSerial, "collectSerial", 1024, NULL, 10, NULL);
   xTaskCreate(read_serial, "read_serial", 1024, NULL, 10, NULL);
-  xTaskCreate(send_frame_to_slcan, "send_frame_to_slcan", 1024, NULL, 10, NULL);
-  xTaskCreate(send_frame_can_bus, "send_frame_can_bus", 1024, NULL, 10, NULL);
+  xTaskCreate(send_frame_to_serial, "send_frame_to_serial", 1024, NULL, 10,
+              NULL);
+  xTaskCreate(send_frame_to_can_bus, "send_frame_to_can_bus", 1024, NULL, 10,
+              NULL);
 }
