@@ -1,0 +1,77 @@
+# OS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+.directory
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor and IDE state
+.vscode/
+.idea/
+*.code-workspace
+*.workspace
+*.user
+*.suo
+*.sln.docstates
+
+# Temporary and backup files
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# ESP-IDF build output
+/build/
+/build_*/
+**/build/
+*.bin
+*.elf
+*.map
+*.hex
+*.uf2
+*.o
+*.a
+*.out
+*.exe
+
+# ESP-IDF generated project files
+sdkconfig
+sdkconfig.old
+flasher_args.json
+flash_args
+project_description.json
+
+# ESP-IDF component manager output
+managed_components/
+/components/.idf/
+**/components/.idf/
+.espressif/
+
+# CMake and Ninja generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+compile_commands.json
+build.ninja
+rules.ninja
+.ninja_deps
+.ninja_log
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+venv/
+.venv/
+env/
+
+# Language servers
+.clangd/
+.ccls-cache/
