@@ -57,7 +57,7 @@ void set_twai_mode(char *command) {
   switch (mode) {
   case 'S':
     if (twai_mode == CLOSED) {
-      node_config.bit_timing.bitrate = twai_bitrate[command[2] + '0'];
+      node_config.bit_timing.bitrate = twai_bitrate[command[1] - '0'];
     }
     break;
   case 'O':
@@ -219,8 +219,6 @@ void app_main(void) {
   ESP_ERROR_CHECK(
       twai_node_register_event_callbacks(node_hdl, &user_cbs, NULL));
 
-  // Start the TWAI controller
-  //   ESP_ERROR_CHECK(twai_node_enable(node_hdl));
   if (!usb_serial_jtag_is_driver_installed()) {
     usb_serial_jtag_driver_config_t usb_serial_jtag_config =
         USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
