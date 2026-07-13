@@ -52,12 +52,36 @@ twai_onchip_node_config_t node_config = {
 static QueueHandle_t twai_rx_queue;
 static QueueHandle_t twai_tx_queue;
 
+static bool twai_rx_cb(twai_node_handle_t handle,
+                       const twai_rx_done_event_data_t *edata, void *user_ctx) {
+  uint8_t recv_buff[8];
+  twai_frame_t rx_frame = {
+      .buffer = recv_buff,
+      .buffer_len = sizeof(recv_buff),
+  };
+  if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+    xQueueSendFromISR(twai_rx_queue, &rx_frame, NULL);
+  }
+  return false;
+}
+
 void set_twai_mode(char *command) {
   char mode = command[0];
   switch (mode) {
   case 'S':
     if (twai_mode == CLOSED) {
+      if (node_hdl != NULL) {
+        ESP_ERROR_CHECK(twai_node_delete(node_hdl));
+        node_hdl = NULL;
+      }
       node_config.bit_timing.bitrate = twai_bitrate[command[1] - '0'];
+      ESP_ERROR_CHECK(twai_new_node_onchip(&node_config, &node_hdl));
+
+      twai_event_callbacks_t user_cbs = {
+          .on_rx_done = twai_rx_cb,
+      };
+      ESP_ERROR_CHECK(
+          twai_node_register_event_callbacks(node_hdl, &user_cbs, NULL));
     }
     break;
   case 'O':
@@ -73,7 +97,7 @@ void set_twai_mode(char *command) {
     twai_mode = LISTEN;
     break;
   case 'C':
-    if (twai_mode == OPEN) {
+    if (twai_mode != CLOSED) {
       ESP_ERROR_CHECK(twai_node_disable(node_hdl));
     }
     twai_mode = CLOSED;
@@ -115,8 +139,6 @@ void send_frame_to_can_bus(void *pvParameter) {
         ESP_ERROR_CHECK(twai_node_transmit(
             node_hdl, &twai_frame,
             0)); // Timeout = 0: returns immediately if queue is full
-        ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(
-            node_hdl, -1)); // Wait for transmission to finish
       }
     }
   }
@@ -191,19 +213,6 @@ void read_serial(void *pvParameter) {
       vTaskDelay(pdMS_TO_TICKS(10));
     }
   }
-}
-
-static bool twai_rx_cb(twai_node_handle_t handle,
-                       const twai_rx_done_event_data_t *edata, void *user_ctx) {
-  uint8_t recv_buff[8];
-  twai_frame_t rx_frame = {
-      .buffer = recv_buff,
-      .buffer_len = sizeof(recv_buff),
-  };
-  if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
-    xQueueSendFromISR(twai_rx_queue, &rx_frame, NULL);
-  }
-  return false;
 }
 
 void app_main(void) {
