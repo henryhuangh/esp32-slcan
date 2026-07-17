@@ -7,10 +7,14 @@
 #include "freertos/FreeRTOS.h" // IWYU pragma: keep
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "led_strip.h"
 #include <unistd.h>
 
 #define TWAI_PORT_RX 0
 #define TWAI_PORT_TX 1
+#define RGB_PIN 2
+
+#define RX_BUFFER_SIZE 16
 
 char hex_map[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -52,14 +56,20 @@ twai_onchip_node_config_t node_config = {
 static QueueHandle_t twai_rx_queue;
 static QueueHandle_t twai_tx_queue;
 
+static uint8_t rx_buffer[RX_BUFFER_SIZE][8];
+static uint32_t rx_buffer_index = 0;
+
 static bool twai_rx_cb(twai_node_handle_t handle,
                        const twai_rx_done_event_data_t *edata, void *user_ctx) {
-  uint8_t recv_buff[8];
+
+  uint32_t index = rx_buffer_index % RX_BUFFER_SIZE;
+
   twai_frame_t rx_frame = {
-      .buffer = recv_buff,
-      .buffer_len = sizeof(recv_buff),
+      .buffer = rx_buffer[index],
+      .buffer_len = sizeof(rx_buffer[index]),
   };
   if (ESP_OK == twai_node_receive_from_isr(handle, &rx_frame)) {
+    rx_buffer_index++;
     xQueueSendFromISR(twai_rx_queue, &rx_frame, NULL);
   }
   return false;
@@ -216,6 +226,13 @@ void read_serial(void *pvParameter) {
 }
 
 void app_main(void) {
+
+  led_strip_handle_t led;
+  led_strip_config_t cfg = {.strip_gpio_num = RGB_PIN, .max_leds = 1};
+  led_strip_rmt_config_t rmt = {.resolution_hz = 10000000};
+  ESP_ERROR_CHECK(led_strip_new_rmt_device(&cfg, &rmt, &led));
+  ESP_ERROR_CHECK(led_strip_set_pixel(led, 0, 10, 10, 10));
+  ESP_ERROR_CHECK(led_strip_refresh(led));
 
   twai_rx_queue = xQueueCreate(16, sizeof(twai_frame_t));
   twai_tx_queue = xQueueCreate(16, sizeof(twai_frame_t));
